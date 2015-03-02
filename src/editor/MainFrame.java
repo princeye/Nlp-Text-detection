@@ -5,6 +5,10 @@
  */
 package editor;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Scanner;
+
 /**
  *
  * @author null
@@ -12,11 +16,19 @@ package editor;
 public class MainFrame extends javax.swing.JFrame {
 
     /**
-     * mvariables
+     * variables
      */
-    private boolean saved;
-    private String path;
-    private String string;
+    private boolean mSaved;
+    private String mPath;
+    private String mString;
+
+    private int mArabCounter;
+    private int mNotCounter;
+    private int mNumCorpus;
+    private final int MAX = 153;
+    private final int MIN = 1;
+    private ArrayList<String> mList;
+    private boolean mState;
 
     /**
      * Creates new form MainFrame
@@ -342,8 +354,13 @@ public class MainFrame extends javax.swing.JFrame {
     private void updateInterFaceSelf() {
 
         //init variables
-        saved = false;
-        path = "";
+        mSaved = false;
+        mPath = "";
+        mArabCounter = 0;
+        mNotCounter = 0;
+        mNumCorpus = 1;
+        mList = new ArrayList<>();
+        mState = false;
         //location frame
         setLocationRelativeTo(null);
 
@@ -357,11 +374,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private void aSave() {
-        if (!saved) {
 
-            saved = true;
-
-        }
     }
 
     private void aSaveAs() {
@@ -390,12 +403,80 @@ public class MainFrame extends javax.swing.JFrame {
 
     private void aValidate() {
 
-        string = jTextArea.getText();
+        String[] strings = jTextArea.getText().split(" ");
+        for (String s : strings) {
+            aOpenCorpus(s, "editor/Corpus/Topic1/");
+        }
+        System.out.println(mArabCounter);
+        System.out.println(mNotCounter);
 
-        
+        float ratio = mArabCounter * 100 / strings.length;
+        float ratio2 = mNotCounter * 100 / strings.length;
+
+        if (ratio > ratio2) {
+
+            System.out.println("it's arabic");
+        } else if (ratio < ratio2) {
+
+            System.out.println("it's not arabic");
+        } else {
+
+            System.out.println("there is problem :)");
+        }
+        System.out.println(ratio);
+        System.out.println(ratio2);
+
     }
 
-    private void aOpenCorpus() {
+    private void aOpenCorpus(final String s, final String path) {
+        //get resource filesd
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource(path).getFile());
+        final File[] files = file.listFiles();
+        try (Scanner scanner = new Scanner(files[0])) {
+//            Runnable runnable = new Runnable() {
+//
+//                @Override
+//                public void run() {
+//
+//                }
+//            };
+//
+//            new Thread(runnable).start();
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine().replaceAll(" ", "?<?>?>>");
+                if (line.contains(s)) {
+                    System.out.println(s + " directory:" + path + ", file: " + files[0].getName());
+                    System.out.println("found");
+                    mArabCounter++;
+                    mState = true;
+                    resetValues();
+//Thread.currentThread().interrupt();
+                    return;
 
+                }
+            }
+
+//            if (mState) {
+//                return;
+//            }
+            if (mNumCorpus >= MAX) {
+                resetValues();
+                mState = false;
+                mNotCounter++;
+
+                return;
+            }
+
+            aOpenCorpus(s, path.replace(mNumCorpus + "", (++mNumCorpus) + ""));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            //Thread.currentThread().interrupt();
+        }
+    }
+
+    private void resetValues() {
+        mNumCorpus = MIN;
     }
 }
